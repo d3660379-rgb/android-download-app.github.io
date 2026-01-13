@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Игровой портал</title>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+:root{
+  --bg:#0b0e14;
+  --glass:rgba(255,255,255,.12);
+  --border:rgba(255,255,255,.18);
+  --accent:#4da3ff;
+  --text:#fff;
+  --muted:#a0a7b5;
+  --radius:22px;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+button,input{outline:none;-webkit-appearance:none;appearance:none}
+
+body{
+  margin:0;
+  font-family:"Segoe UI",system-ui,sans-serif;
+  background:radial-gradient(circle at top,#162036,#0b0e14 65%);
+  color:var(--text);
+}
+
+/* TOP BAR */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:64px;
+  display:flex;align-items:center;gap:12px;padding:0 20px;
+  background:var(--glass);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100;
+}
+.topbar svg{color:var(--accent)}
+
+/* CONTENT */
+main{padding:90px 20px 120px;max-width:1200px;margin:auto}
+.screen{display:none;animation:screenFade .35s cubic-bezier(.2,.8,.2,1)}
+.screen.active{display:block}
+@keyframes screenFade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* SEARCH */
+.search input{width:100%;padding:14px 18px;border-radius:18px;border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(14px);color:#fff;font-size:15px}
+
+/* GRID */
+.grid{display:grid;gap:20px}
+@media(min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:900px){.grid{grid-template-columns:repeat(4,1fr)}}
+
+/* CARD */
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.06));
+  backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);
+  padding:26px;text-align:center;transition:.4s cubic-bezier(.2,.8,.2,1);cursor:pointer;
+}
+.card:active{transform:scale(.98)}
+.card svg{width:54px;height:54px;color:var(--accent);margin-bottom:14px}
+.card h3{margin:0 0 14px}
+
+/* BUTTON */
+.btn{
+  width:100%;padding:14px;border-radius:16px;border:none;background:linear-gradient(180deg,#6bb7ff,#3c86ff);color:#fff;font-weight:600;cursor:pointer;transition:.25s cubic-bezier(.2,.8,.2,1);
+}
+.btn:active{transform:scale(.95)}
+.btn.playmarket{background:linear-gradient(180deg,#34a853,#0f9d58)}
+
+/* BOTTOM BAR */
+.bottombar{
+  position:fixed;bottom:12px;left:12px;right:12px;height:64px;
+  display:flex;justify-content:space-around;align-items:center;background:var(--glass);backdrop-filter:blur(20px);
+  border:1px solid var(--border);border-radius:22px
+}
+.bottombar button{background:none;border:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;font-size:11px}
+.bottombar button.active{color:var(--accent)}
+
+/* MODAL */
+.modal{
+  position:fixed;inset:0;display:flex;justify-content:center;align-items:center;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(18px);opacity:0;pointer-events:none;
+  transition:.35s cubic-bezier(.2,.8,.2,1);
+}
+.modal.active{opacity:1;pointer-events:auto}
+.modal-box{
+  width:90%;max-width:420px;padding:28px;border-radius:28px;
+  background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.08));
+  border:1px solid var(--border);text-align:center;
+  transform:translateY(30px) scale(.96);transition:.4s cubic-bezier(.2,.8,.2,1);
+}
+.modal.active .modal-box{transform:translateY(0) scale(1)}
+.modal-box svg{width:72px;height:72px;color:var(--accent)}
+.modal-box p{color:var(--muted)}
+.modal-actions{display:flex;flex-direction:column;gap:12px}
+.btn.secondary{background:rgba(255,255,255,.12)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <i data-lucide="gamepad-2"></i>
+  <h1>Игровой портал</h1>
+</div>
+
+<main>
+<section class="screen active" id="home">
+  <div class="search">
+    <input id="search" placeholder="Поиск игр...">
+  </div>
+  <div class="grid" id="games"></div>
+</section>
+</main>
+
+<div class="bottombar">
+  <button class="active" data-screen="home"><i data-lucide="home"></i>Главная</button>
+</div>
+
+<div class="modal" id="modal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div id="modalIcon"></div>
+    <h2 id="modalTitle"></h2>
+    <p id="modalDesc"></p>
+    <div class="modal-actions">
+      <button class="btn" id="downloadBtn">Скачать игру</button>
+      <button class="btn playmarket" id="playmarketBtn">Play Market</button>
+      <button class="btn secondary" onclick="hideModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const games=[
+  {title:"Neon Runner", desc:"Неоновая аркада.", icon:"zap", url:"https://site1.com", url2:"https://play.google.com/store/apps/details?id=site1"},
+  {title:"Mind Blocks", desc:"Логическая головоломка.", icon:"puzzle", url:"https://site2.com", url2:"https://play.google.com/store/apps/details?id=site2"},
+  {title:"Shadow Strike", desc:"Футуристический экшен.", icon:"swords", url:"https://site3.com", url2:"https://play.google.com/store/apps/details?id=site3"},
+  {title:"Empire Core", desc:"Стратегия.", icon:"castle", url:"https://site4.com", url2:"https://play.google.com/store/apps/details?id=site4"}
+];
+
+const grid=document.getElementById("games");
+const modal=document.getElementById("modal");
+const downloadBtn=document.getElementById("downloadBtn");
+const playBtn=document.getElementById("playmarketBtn");
+
+function render(list){
+  grid.innerHTML="";
+  list.forEach(game=>{
+    const c=document.createElement("div");
+    c.className="card";
+    c.innerHTML=`
+      <i data-lucide="${game.icon}"></i>
+      <h3>${game.title}</h3>
+      <button class="btn">Подробнее</button>
+    `;
+    c.querySelector("button").onclick=e=>{
+      e.stopPropagation();
+      showModal(game);
+    };
+    grid.appendChild(c);
+  });
+  lucide.createIcons();
+}
+
+function showModal(game){
+  modal.classList.add("active");
+  modal.querySelector("#modalTitle").textContent=game.title;
+  modal.querySelector("#modalDesc").textContent=game.desc;
+  modal.querySelector("#modalIcon").innerHTML=`<i data-lucide="${game.icon}"></i>`;
+  
+  downloadBtn.onclick = ()=>{ window.location.href=game.url; };
+  playBtn.onclick = ()=>{ window.location.href=game.url2; };
+  
+  lucide.createIcons();
+}
+
+function hideModal(){ modal.classList.remove("active"); }
+function closeModal(e){ if(e.target===modal) hideModal(); }
+
+document.getElementById("search").oninput=e=>{
+  render(games.filter(g=>g.title.toLowerCase().includes(e.target.value.toLowerCase())));
+};
+
+document.querySelectorAll(".bottombar button").forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll(".bottombar button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+    document.getElementById(btn.dataset.screen).classList.add("active");
+    if(btn.dataset.screen==="home") document.getElementById("search").focus();
+  };
+});
+
+render(games);
+lucide.createIcons();
+</script>
+
+</body>
+</html>
